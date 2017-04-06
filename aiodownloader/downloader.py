@@ -1,5 +1,7 @@
 """
 Principal module for the downloader. It containes the download jobs and the handler.
+
+TODO: Improve error handling.
 """
 
 
@@ -11,7 +13,7 @@ from typing import Optional, List
 import aiohttp
 import aiofiles
 
-from aiodownloader import utils
+from . import utils
 
 logger = logging.getLogger('aiodownloader')
 
@@ -129,7 +131,7 @@ class Handler:
     async def download_bulk(self,
                             files_url: List[str],
                             save_path: Optional[str]=None,
-                            progress_bar: Optional[bool]=True):
+                            progress_bar: Optional[bool]=True) -> List[DownloadJob]:
         """
         Dowloads a bulk of files from the given list of urls to the given path.
         
@@ -139,35 +141,51 @@ class Handler:
         :return: the future for the 
         """
 
+        logger.info('Starting download of:' *files_url)
+
         logger.debug('Creating jobs')
         jobs = [self._job_factory(url, save_path=save_path) for url in files_url]
 
         logger.debug('Creating asyncio tasks')
         tasks = [asyncio.ensure_future(job.download()) for job in jobs]
-        logger.info('Starting download')
 
         if progress_bar:
             logger.debug('Starting progress bar')
             await utils.multi_progress_bar(jobs)
 
-        logger.debug('Returning tasks')
-        return await asyncio.gather(*tasks)
+        await asyncio.gather(*tasks)
+
+        logger.info('The download has been completed')
+        return [task.result() for task in tasks]
 
     async def download(self,
                        file_url: str,
+                       progress_bar: Optional[bool]=True,
                        file_name: Optional[str]=None,
                        save_path: Optional[str]=None) -> DownloadJob:
         """
         Downloads a file from the given url to a file to the given path.
         
         :param file_url: the url where the file is located 
+        :param progress_bar: if true. A progress bar will be shown.
         :param save_path: path to be used for saving the file. Defaults to the current dir
         :param file_name: file name to be used when saving the file. Defaults to the end of the 
         url
         :return: A task wrapping the download job.
         """
+        logger.debug('Creating jobs')
         download_job = DownloadJob(self._session, file_url, file_name, save_path,
                                    self._chunk_size)
 
-        # Creating the asyncio tasks.
-        return await download_job.download()
+        task = asyncio.ensure_future(download_job.download())
+        logger.info(f'Starting the download of: {download_job.file_name}')
+
+        if progress_bar:
+            await utils.progress_bar(download_job)
+
+        # Waiting for the download to be completed
+        await task
+
+        logger.info(f'The download of {download_job.file_name} has been completed')
+        # Returning the result of the task.
+        return task.result()

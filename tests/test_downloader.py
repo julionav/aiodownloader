@@ -5,13 +5,13 @@ import asyncio
 
 import aiohttp
 
-from aiodownloader import Downloader
+import aiodownloader
 
 
 class TestDownloader:
-    """Tests for the Downloader class"""
+    """Tests for the Handler class"""
 
-    downloader = Downloader()
+    downloader = aiodownloader.Handler()
 
     def test_has_loop(self):
         """Tests that the downloader has a asyncio event loop"""
@@ -22,3 +22,5 @@ class TestDownloader:
         """Tests that the downloader has a aiohttp session"""
         assert hasattr(self.downloader, '_session')
         assert isinstance(self.downloader._session, aiohttp.ClientSession)
+
+

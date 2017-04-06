@@ -1,8 +1,13 @@
 import logging
 import asyncio
+import copy
 from typing import List
 
 from tqdm import tqdm
+
+# Typing imports
+if False:
+    from . import downloader
 
 logger = logging.getLogger('aiodownloader.utils')
 
@@ -11,11 +16,27 @@ def pretty_tqdm(size: int, name: str):
     """Returns a tqdm pbar with some predefined options"""
     return tqdm(total=size, desc=name, unit_scale=True, unit='B')
 
+async def progress_bar(job: 'downloader.DownloadJob') -> None:
+    """
+    Creates a tqdm progress bar for the given job. Updating it asynchronously every half a sec
+    according to how much the job has advanced since the last update.
+    
+    :param job: download job that will have a progress bar
+    """
+    job_size = await job.get_size()
+    pbar = pretty_tqdm(size=job_size, name=job.file_name)
 
-async def multi_progress_bar(jobs: List[any]):
+    last_progress = 0
+    while not job.completed:
+        pbar.update(job.progress - last_progress)
+        # We copy the progress into the last progress.
+        last_progress = copy.copy(job.progress)
+        await asyncio.sleep(0.5)
+
+async def multi_progress_bar(jobs: List['downloader.DownloadJob']) -> None:
     """
     Creates one tqdm progress bar for every download job and updates all of them asynchronously 
-    every sec according to how much the job has avanced since the last update.
+    every sec according to how much the job has advanced since the last update.
 
     :param jobs: list of download jobs that will have a progress bar 
     :return: 
