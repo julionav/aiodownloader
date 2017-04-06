@@ -9,8 +9,6 @@ from tqdm import tqdm
 if False:
     from . import downloader
 
-logger = logging.getLogger('aiodownloader.utils')
-
 
 def pretty_tqdm(size: int, name: str):
     """Returns a tqdm pbar with some predefined options"""
@@ -64,9 +62,3 @@ async def multi_progress_bar(jobs: List['downloader.DownloadJob']) -> None:
 
         last_progresses = new_progresses
         await asyncio.sleep(0.5)
-
-
-
-
-
-

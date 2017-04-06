@@ -4,7 +4,6 @@ Principal module for the downloader. It containes the download jobs and the hand
 TODO: Improve error handling.
 """
 
-
 import os
 import asyncio
 import logging

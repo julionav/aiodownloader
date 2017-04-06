@@ -1,5 +1,6 @@
 """
-Example usage for the downloader
+Example usage for the downloader. It shows how to download a single file with the downloader and
+multiple downloads
 """
 import logging
 import asyncio
@@ -14,7 +15,6 @@ async def main(loop):
     # Downloading a file
     await downloader.download('https://media.giphy.com/media/Vuw9m5wXviFIQ/giphy.gif')
 
-    # Downloading multiple files
     await downloader.download_bulk([
         'https://www.visualstudio.com/wp-content/uploads/2016/06/python-1-562x309@2x-op.png',
         'https://media.giphy.com/media/Vuw9m5wXviFIQ/giphy.gif',
