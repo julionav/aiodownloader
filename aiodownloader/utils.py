@@ -1,7 +1,7 @@
-import logging
+import functools
 import asyncio
 import copy
-from typing import List
+from typing import List, Optional, Coroutine
 
 from tqdm import tqdm
 
@@ -62,3 +62,27 @@ async def multi_progress_bar(jobs: List['downloader.DownloadJob']) -> None:
 
         last_progresses = new_progresses
         await asyncio.sleep(0.5)
+
+
+def make_sync(couroutine: [Coroutine, asyncio.Future], loop: Optional[asyncio.BaseEventLoop]):
+    """
+    Wraps a couroutine to work synchronously. 
+    
+    :param couroutine: the coroutine to be wrapped
+    :param loop: A asyncio event loop
+    :return: 
+    """
+    loop = loop or asyncio.get_event_loop()
+
+    @functools.wraps(couroutine)
+    def wrapper(*args, **kwargs):
+        return loop.run_until_complete(couroutine(*args, **kwargs))
+
+    return wrapper
+
+
+
+
+
+
+

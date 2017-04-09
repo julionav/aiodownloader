@@ -1,28 +1,51 @@
 # aiodownloader
 Async file downloader.
 
-aiodownloader is a tool for downloading files asynchronously.
+aiodownloader is a simple tool that allows to download files in parallel
+without the overhead of using multiple processes by using instead the async
+features of python.
 
 ## Example usage
+
+### Using it in a synchronous program
+
+```
+import aiodownloader
+
+def download_sync():
+    downloader = aiodownloader.Handler() # Sync defaults to True
+
+    # Downloading a file
+    downloader.download(url_of_file)
+
+    # Downloading multiple files
+    await downloader.download(*list_of_url_of_files)
+
+
+if __name__ == '__main__':
+    download_sync()
+```
+
+### Using it in an async program.
+
 ```
 import asyncio
 
 import aiodownloader
 
-async def main(loop):
-    downloader = aiodownloader.Handler(loop)
+async def downlaod_async():
+    downloader = aiodownloader.Handler(sync=False)
 
     # Downloading a file
     await downloader.download(url_of_file)
 
-    await downloader.download_bulk(list_of_url_of_files)
+    await downloader.download(*list_of_url_of_files)
 
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(loop))
+    loop.run_until_complete(download_async())
 ```
-
 
 
 ## Features (whishlist)
