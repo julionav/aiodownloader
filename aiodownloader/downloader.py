@@ -30,16 +30,15 @@ class DownloadJob:
     def __init__(self,
                  session: aiohttp.ClientSession,
                  file_url: str,
-                 file_name: Optional[str]=None,
-                 save_path: Optional[str]=None,
-                 chunk_size: Optional[int]=1024):
+                 save_path: Optional[str] = None,
+                 chunk_size: Optional[int] = 1024):
 
         self.file_url = file_url
         self._session = session
         self._chunk_size = chunk_size
 
-        self.file_name = file_name or file_url.split('/')[~0]
-        self.file_path = os.path.join(save_path, file_name) if save_path else self.file_name
+        self.file_name = file_url.split('/')[~0]
+        self.file_path = os.path.join(save_path, self.file_name) if save_path else self.file_name
 
         self.completed = False
         self.progress = 0
@@ -105,9 +104,9 @@ class Handler:
     """
 
     def __init__(self,
-                 loop: Optional[asyncio.BaseEventLoop]=None,
-                 session: Optional[aiohttp.ClientSession]=None,
-                 chunk_size: Optional[int]=1024):
+                 loop: Optional[asyncio.BaseEventLoop] = None,
+                 session: Optional[aiohttp.ClientSession] = None,
+                 chunk_size: Optional[int] = 1024):
 
         self._loop = loop or asyncio.get_event_loop()
         self._session = session or aiohttp.ClientSession(loop=self._loop)
@@ -115,24 +114,22 @@ class Handler:
 
     def _job_factory(self,
                      file_url: str,
-                     file_name: Optional[str]=None,
                      save_path: Optional[str] = None) -> DownloadJob:
         """
         Shortcut for creating a download job. It adds the session and the chunk size.
         :param file_url: 
-        :param file_name: 
         :param save_path: 
         :return: 
         """
 
-        return DownloadJob(self._session, file_url, file_name, save_path, self._chunk_size)
+        return DownloadJob(self._session, file_url, save_path, self._chunk_size)
 
-    async def download_bulk(self,
-                            files_url: List[str],
-                            save_path: Optional[str]=None,
-                            progress_bar: Optional[bool]=True) -> List[DownloadJob]:
+    async def download(self,
+                       *files_url: str,
+                       save_path: Optional[str]=None,
+                       progress_bar: Optional[bool]=True) -> List[DownloadJob]:
         """
-        Dowloads a bulk of files from the given list of urls to the given path.
+        Downloads a bulk of files from the given list of urls to the given path.
         
         :param files_url: list of urls where the files are located
         :param save_path: path to be used for saving the files. Defaults to the current dir
@@ -140,7 +137,7 @@ class Handler:
         :return: the future for the 
         """
 
-        logger.info('Starting download of:' *files_url)
+        logger.info(f'Starting download of: {files_url}')
 
         logger.debug('Creating jobs')
         jobs = [self._job_factory(url, save_path=save_path) for url in files_url]
@@ -156,35 +153,3 @@ class Handler:
 
         logger.info('The download has been completed')
         return [task.result() for task in tasks]
-
-    async def download(self,
-                       file_url: str,
-                       progress_bar: Optional[bool]=True,
-                       file_name: Optional[str]=None,
-                       save_path: Optional[str]=None) -> DownloadJob:
-        """
-        Downloads a file from the given url to a file to the given path.
-        
-        :param file_url: the url where the file is located 
-        :param progress_bar: if true. A progress bar will be shown.
-        :param save_path: path to be used for saving the file. Defaults to the current dir
-        :param file_name: file name to be used when saving the file. Defaults to the end of the 
-        url
-        :return: A task wrapping the download job.
-        """
-        logger.debug('Creating jobs')
-        download_job = DownloadJob(self._session, file_url, file_name, save_path,
-                                   self._chunk_size)
-
-        task = asyncio.ensure_future(download_job.download())
-        logger.info(f'Starting the download of: {download_job.file_name}')
-
-        if progress_bar:
-            await utils.progress_bar(download_job)
-
-        # Waiting for the download to be completed
-        await task
-
-        logger.info(f'The download of {download_job.file_name} has been completed')
-        # Returning the result of the task.
-        return task.result()
